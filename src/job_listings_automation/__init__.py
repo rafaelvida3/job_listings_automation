@@ -1,0 +1,1 @@
+"""Job listings automation package."""
