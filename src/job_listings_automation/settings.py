@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 from zoneinfo import ZoneInfo
 
 TIMEZONE = ZoneInfo("America/Sao_Paulo")
@@ -24,6 +25,8 @@ class AppSettings:
     max_reading_delay_ms: int = 3_200
     max_scroll_rounds: int = 30
     stale_scroll_retries: int = 3
+    max_pages: Optional[int] = None
+    take_screenshot_on_error: bool = True
 
 
 def get_now() -> datetime:
