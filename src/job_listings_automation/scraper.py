@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 from typing import Optional
 
-from playwright.sync_api import BrowserContext, Page, sync_playwright
+from playwright.sync_api import BrowserContext, Error as PlaywrightError, Page, sync_playwright
 
 from .browser_session import BrowserSession
 from .exporters import OutputFormat, export_listings
@@ -13,6 +13,8 @@ from .listing_extractor import ListingExtractor
 from .models import ListingData
 from .pagination import PaginationNavigator
 from .settings import AppSettings
+
+RECOVERABLE_SCREENSHOT_EXCEPTIONS = (PlaywrightError, RuntimeError, OSError)
 
 
 class ListingsScraper:
@@ -139,16 +141,15 @@ class ListingsScraper:
             self.take_error_screenshot(page, run_timestamp)
             raise
         finally:
-            if self.settings.take_screenshot_on_error:
-                self.take_error_screenshot(page, run_timestamp)
+            self.browser_session.close_context_safely(context)
 
     def take_error_screenshot(self, page: Optional[Page], run_timestamp: str) -> None:
-        if page is None:
+        if page is None or not self.settings.take_screenshot_on_error:
             return
 
         try:
             screenshot_file = self.output_dir.parent / "logs" / f"job_listings_error_{run_timestamp}.png"
             page.screenshot(path=str(screenshot_file), full_page=True)
             self.logger.info("Error screenshot saved to %s", screenshot_file)
-        except Exception as error:
+        except RECOVERABLE_SCREENSHOT_EXCEPTIONS as error:
             self.logger.warning("Failed to save error screenshot: %s", error)

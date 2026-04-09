@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 from .models import ListingData
 from .settings import get_now
@@ -13,6 +13,10 @@ OutputFormat = Literal["txt", "json"]
 
 def build_output_file_path(output_dir: Path, run_timestamp: str, output_format: OutputFormat) -> Path:
     return output_dir / f"job_listings_{run_timestamp}.{output_format}"
+
+
+def format_text_field(value: Optional[str]) -> str:
+    return value if value else "N/A"
 
 
 def export_listings_to_text(
@@ -34,12 +38,12 @@ def export_listings_to_text(
         for index, listing in enumerate(listings, start=1):
             file.write("=" * 100 + "\n")
             file.write(f"LISTING #{index}\n")
-            file.write(f"Listing ID: {listing.listing_id or 'N/A'}\n")
+            file.write(f"Listing ID: {format_text_field(listing.listing_id)}\n")
             file.write(f"Source URL: {listing.source_url}\n")
-            file.write(f"Title: {listing.title}\n")
-            file.write(f"Link: {listing.link}\n")
+            file.write(f"Title: {format_text_field(listing.title)}\n")
+            file.write(f"Link: {format_text_field(listing.link)}\n")
             file.write("Description:\n")
-            file.write(listing.description)
+            file.write(format_text_field(listing.description))
             file.write("\n\n")
 
     logger.info("Text output saved to %s", output_file)

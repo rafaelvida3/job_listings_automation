@@ -5,15 +5,27 @@ import random
 from typing import Optional
 from urllib.parse import urlparse
 
-from playwright.sync_api import Locator, Page, TimeoutError
+from playwright.sync_api import Error as PlaywrightError, Locator, Page, TimeoutError
 
 from .models import ListingData
 from .pagination import PaginationNavigator
-from .selectors import (DETAIL_DESCRIPTION_SELECTOR, DETAIL_TITLE_SELECTOR,
-                        LISTING_CARD_SELECTOR, LISTING_LINK_SELECTOR)
+from .selectors import (
+    DETAIL_DESCRIPTION_SELECTOR,
+    DETAIL_TITLE_SELECTOR,
+    LISTING_CARD_SELECTOR,
+    LISTING_LINK_SELECTOR,
+)
 from .settings import AppSettings
 from .text_utils import clean_multiline_text, clean_single_line
 from .url_utils import normalize_listing_url
+
+RECOVERABLE_EXTRACTION_EXCEPTIONS = (
+    PlaywrightError,
+    RuntimeError,
+    AttributeError,
+    TypeError,
+    ValueError,
+)
 
 
 class ListingExtractor:
@@ -34,7 +46,7 @@ class ListingExtractor:
         if parsed_url.scheme and parsed_url.netloc:
             return f"{parsed_url.scheme}://{parsed_url.netloc}"
 
-        return "https://example.com"
+        return ""
 
     def get_locator_text(self, locator: Locator, multiline: bool = False) -> str:
         try:
@@ -43,7 +55,7 @@ class ListingExtractor:
 
             raw_text = locator.first.inner_text(timeout=5_000)
             return clean_multiline_text(raw_text) if multiline else clean_single_line(raw_text)
-        except Exception:
+        except RECOVERABLE_EXTRACTION_EXCEPTIONS:
             return ""
 
     def simulate_description_scroll(self, page: Page) -> None:
@@ -57,8 +69,8 @@ class ListingExtractor:
                 scroll_amount = self.random_generator.randint(200, 500)
                 container.evaluate("(element, amount) => { element.scrollTop += amount; }", scroll_amount)
                 page.wait_for_timeout(self.random_generator.randint(800, 1800))
-        except Exception:
-            return
+        except RECOVERABLE_EXTRACTION_EXCEPTIONS as error:
+            self.logger.debug("Skipping description scroll due to recoverable error: %s", error)
 
     def click_listing_card(self, card: Locator, listing_id: str) -> None:
         link_locator = card.locator(LISTING_LINK_SELECTOR)
@@ -72,7 +84,7 @@ class ListingExtractor:
                 card.click(timeout=10_000)
 
             self.logger.info("Clicked listing card %s", listing_id or "<unknown>")
-        except Exception as error:
+        except RECOVERABLE_EXTRACTION_EXCEPTIONS as error:
             self.logger.warning(
                 "Standard click failed for listing %s. Trying script click. Error: %s",
                 listing_id or "<unknown>",
@@ -93,17 +105,18 @@ class ListingExtractor:
         listing_id = card.get_attribute("data-occludable-job-id") or card.get_attribute("data-job-id") or ""
 
         card_link_locator = card.locator(LISTING_LINK_SELECTOR)
-        fallback_title = self.get_locator_text(card_link_locator)
-        fallback_link = ""
+        fallback_title = self.get_locator_text(card_link_locator) or None
+        fallback_link: Optional[str] = None
 
         try:
             if card_link_locator.count() > 0:
-                fallback_link = normalize_listing_url(
+                normalized_fallback_link = normalize_listing_url(
                     card_link_locator.first.get_attribute("href"),
                     base_origin=base_origin,
                 )
-        except Exception:
-            fallback_link = ""
+                fallback_link = normalized_fallback_link or None
+        except RECOVERABLE_EXTRACTION_EXCEPTIONS:
+            fallback_link = None
 
         self.click_listing_card(card, listing_id)
         page.wait_for_timeout(1_200)
@@ -131,17 +144,19 @@ class ListingExtractor:
         detail_description_locator = page.locator(DETAIL_DESCRIPTION_SELECTOR)
 
         title = self.get_locator_text(detail_title_locator) or fallback_title
-        description = self.get_locator_text(detail_description_locator, multiline=True)
+        description_text = self.get_locator_text(detail_description_locator, multiline=True)
+        description = description_text or None
 
-        detail_link = ""
+        detail_link: Optional[str] = None
         try:
             if detail_title_locator.count() > 0:
-                detail_link = normalize_listing_url(
+                normalized_detail_link = normalize_listing_url(
                     detail_title_locator.first.get_attribute("href"),
                     base_origin=base_origin,
                 )
-        except Exception:
-            detail_link = ""
+                detail_link = normalized_detail_link or None
+        except RECOVERABLE_EXTRACTION_EXCEPTIONS:
+            detail_link = None
 
         link = detail_link or fallback_link
 
@@ -151,9 +166,9 @@ class ListingExtractor:
 
         return ListingData(
             listing_id=listing_id,
-            title=title or "Untitled listing",
-            link=link or "Link not found",
-            description=description or "Description not found",
+            title=title,
+            link=link,
+            description=description,
             source_url=source_url,
         )
 
@@ -198,6 +213,10 @@ class ListingExtractor:
                     continue
 
                 unique_key = listing_data.listing_id or listing_data.link
+                if not unique_key:
+                    self.logger.info("Skipping listing without a stable unique key.")
+                    continue
+
                 if unique_key in seen_keys:
                     self.logger.info("Skipping duplicate listing %s", unique_key)
                     continue
@@ -208,9 +227,9 @@ class ListingExtractor:
                     "Collected %s listings in total | current page %s | %s",
                     len(listings),
                     current_page_number,
-                    listing_data.title,
+                    listing_data.title or "<missing title>",
                 )
-            except Exception as error:
+            except RECOVERABLE_EXTRACTION_EXCEPTIONS as error:
                 self.logger.exception(
                     "Error while processing card %s on page %s: %s",
                     index + 1,

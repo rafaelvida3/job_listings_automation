@@ -3,10 +3,18 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from playwright.sync_api import BrowserContext, Page, Playwright, TimeoutError
+from playwright.sync_api import (
+    BrowserContext,
+    Error as PlaywrightError,
+    Page,
+    Playwright,
+    TimeoutError,
+)
 
 from .selectors import LISTING_CARD_SELECTOR
 from .settings import AppSettings
+
+RECOVERABLE_BROWSER_EXCEPTIONS = (PlaywrightError, RuntimeError, OSError)
 
 
 class BrowserSession:
@@ -58,5 +66,5 @@ class BrowserSession:
 
         try:
             context.close()
-        except Exception as error:
+        except RECOVERABLE_BROWSER_EXCEPTIONS as error:
             self.logger.warning("Failed to close browser context cleanly: %s", error)

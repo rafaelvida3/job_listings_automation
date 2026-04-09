@@ -3,12 +3,24 @@ from __future__ import annotations
 import logging
 import re
 
-from playwright.sync_api import Locator, Page, TimeoutError
+from playwright.sync_api import Error as PlaywrightError, Locator, Page, TimeoutError
 
-from .selectors import (EMPTY_RESULTS_TEXTS, LISTING_CARD_SELECTOR,
-                        NEXT_PAGE_BUTTON_SELECTOR, PAGINATION_STATE_SELECTOR)
+from .selectors import (
+    EMPTY_RESULTS_TEXTS,
+    LISTING_CARD_SELECTOR,
+    NEXT_PAGE_BUTTON_SELECTOR,
+    PAGINATION_STATE_SELECTOR,
+)
 from .settings import AppSettings
 from .text_utils import clean_single_line
+
+RECOVERABLE_PAGINATION_EXCEPTIONS = (
+    PlaywrightError,
+    RuntimeError,
+    AttributeError,
+    TypeError,
+    ValueError,
+)
 
 
 class PaginationNavigator:
@@ -26,7 +38,7 @@ class PaginationNavigator:
                 return ""
 
             return clean_single_line(locator.first.inner_text(timeout=5_000))
-        except Exception:
+        except RECOVERABLE_PAGINATION_EXCEPTIONS:
             return ""
 
     def has_empty_search_results(self, page: Page) -> bool:
@@ -40,7 +52,7 @@ class PaginationNavigator:
                 if locator.first.is_visible():
                     self.logger.info("Empty search results detected: %s", text)
                     return True
-            except Exception:
+            except RECOVERABLE_PAGINATION_EXCEPTIONS:
                 continue
 
         return False
@@ -84,7 +96,7 @@ class PaginationNavigator:
                 last_card = cards.nth(count - 1)
                 last_card.scroll_into_view_if_needed(timeout=5_000)
                 return True
-            except Exception as error:
+            except RECOVERABLE_PAGINATION_EXCEPTIONS as error:
                 self.logger.warning(
                     "Failed to scroll last card on attempt %s/%s: %s",
                     attempt,

@@ -14,3 +14,8 @@ def test_normalize_listing_url_should_join_relative_url() -> None:
 def test_normalize_listing_url_should_return_empty_string_for_none() -> None:
     result = normalize_listing_url(None)
     assert result == ""
+
+
+def test_normalize_listing_url_should_return_empty_string_for_relative_url_without_base_origin() -> None:
+    result = normalize_listing_url("/positions/987")
+    assert result == ""
