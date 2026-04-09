@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 
 from job_listings_automation.exporters import export_listings
 from job_listings_automation.models import ListingData
 
 
-def test_export_listings_should_create_json_file(tmp_path) -> None:
+def test_export_listings_should_create_json_file(tmp_path: Path) -> None:
     logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(
@@ -34,7 +35,7 @@ def test_export_listings_should_create_json_file(tmp_path) -> None:
     assert payload["listings"][0]["title"] == "Python Developer"
 
 
-def test_export_listings_should_create_text_file(tmp_path) -> None:
+def test_export_listings_should_create_text_file(tmp_path: Path) -> None:
     logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(
@@ -59,7 +60,7 @@ def test_export_listings_should_create_text_file(tmp_path) -> None:
     assert "Python Developer" in content
 
 
-def test_export_listings_should_render_na_in_text_when_fields_are_missing(tmp_path) -> None:
+def test_export_listings_should_render_na_in_text_when_fields_are_missing(tmp_path: Path) -> None:
     logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(
@@ -85,7 +86,7 @@ def test_export_listings_should_render_na_in_text_when_fields_are_missing(tmp_pa
     assert "Description:\nN/A" in content
 
 
-def test_export_listings_should_keep_null_in_json_when_fields_are_missing(tmp_path) -> None:
+def test_export_listings_should_keep_null_in_json_when_fields_are_missing(tmp_path: Path) -> None:
     logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(

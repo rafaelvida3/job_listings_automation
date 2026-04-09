@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import sys
+from argparse import Namespace
 from pathlib import Path
+
+from _pytest.monkeypatch import MonkeyPatch
 
 from job_listings_automation.main import build_settings, parse_args
 
 
-def test_parse_args_should_read_cli_options(monkeypatch) -> None:
+def test_parse_args_should_read_cli_options(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         sys,
         "argv",
@@ -33,12 +36,13 @@ def test_parse_args_should_read_cli_options(monkeypatch) -> None:
 
 
 def test_build_settings_should_map_cli_arguments() -> None:
-    class Args:
-        headless = True
-        max_pages = 3
-        take_screenshot_on_error = False
+    args = Namespace(
+        headless=True,
+        max_pages=3,
+        take_screenshot_on_error=False,
+    )
 
-    settings = build_settings(Args())
+    settings = build_settings(args)
 
     assert settings.headless is True
     assert settings.max_pages == 3

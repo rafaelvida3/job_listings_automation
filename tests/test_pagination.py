@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import logging
+from typing import cast
+
+from _pytest.monkeypatch import MonkeyPatch
+from playwright.sync_api import Page
 
 from job_listings_automation.pagination import PaginationNavigator
 from job_listings_automation.selectors import DEFAULT_SELECTOR_PROFILE
@@ -21,13 +25,15 @@ def test_safe_scroll_last_card_should_return_false_after_retries() -> None:
     cards = FakeLocator(items=[BrokenScrollCard("job-1")])
     page = FakePage(locator_map={DEFAULT_SELECTOR_PROFILE.listing_card: cards})
 
-    moved = navigator.safe_scroll_last_card(page)
+    moved = navigator.safe_scroll_last_card(cast(Page, page))
 
     assert moved is False
     assert page.waited_timeouts == [700, 700]
 
 
-def test_go_to_next_results_page_should_return_true_when_page_changes(monkeypatch) -> None:
+def test_go_to_next_results_page_should_return_true_when_page_changes(
+        monkeypatch: MonkeyPatch
+    ) -> None:
     navigator = build_navigator()
     next_button = FakeLocator(items=[FakeLocator()])
     pagination_state = FakeLocator(text="Page 1 of 3")
@@ -46,7 +52,7 @@ def test_go_to_next_results_page_should_return_true_when_page_changes(monkeypatc
         lambda current_page: next(page_numbers),
     )
 
-    moved = navigator.go_to_next_results_page(page)
+    moved = navigator.go_to_next_results_page(cast(Page, page))
 
     assert moved is True
     assert next_button.first.clicked is True

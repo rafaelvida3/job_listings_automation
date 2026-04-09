@@ -52,9 +52,7 @@ class ListingExtractor:
             return clean_multiline_text(raw_text)
         return clean_single_line(raw_text)
 
-    def get_first_attribute(
-        self, locator: Locator, attribute_name: str
-    ) -> str | None:
+    def get_first_attribute(self, locator: Locator, attribute_name: str) -> str | None:
         try:
             if locator.count() == 0:
                 return None
@@ -67,9 +65,7 @@ class ListingExtractor:
 
     def get_listing_id(self, card: Any) -> str:
         return (
-            card.get_attribute("data-occludable-job-id")
-            or card.get_attribute("data-job-id")
-            or ""
+            card.get_attribute("data-occludable-job-id") or card.get_attribute("data-job-id") or ""
         )
 
     def simulate_description_scroll(self, page: Page) -> None:

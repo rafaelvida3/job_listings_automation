@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from playwright.sync_api import BrowserContext, Page, Playwright, TimeoutError
 from playwright.sync_api import Error as PlaywrightError
@@ -61,7 +62,7 @@ class BrowserSession:
         )
         self.logger.info("Listing list is ready on the current source URL.")
 
-    def close_context_safely(self, context: BrowserContext | None) -> None:
+    def close_context_safely(self, context: BrowserContext | Any | None) -> None:
         if context is None:
             return
 

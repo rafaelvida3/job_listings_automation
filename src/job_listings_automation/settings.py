@@ -44,8 +44,7 @@ class AppSettings:
 
         if self.max_reading_delay_ms < self.min_reading_delay_ms:
             raise ValueError(
-                "max_reading_delay_ms must be greater than or equal to "
-                "min_reading_delay_ms."
+                "max_reading_delay_ms must be greater than or equal to min_reading_delay_ms."
             )
 
         if self.max_pages is not None and self.max_pages <= 0:
@@ -73,11 +72,7 @@ def load_search_urls(config_file: Path = CONFIG_FILE) -> list[str]:
         )
 
     raw_data = json.loads(config_file.read_text(encoding="utf-8"))
-    search_urls = [
-        str(url).strip()
-        for url in raw_data.get("search_urls", [])
-        if str(url).strip()
-    ]
+    search_urls = [str(url).strip() for url in raw_data.get("search_urls", []) if str(url).strip()]
 
     if not search_urls:
         raise ValueError("The search config must contain at least one non-empty URL.")

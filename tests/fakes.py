@@ -103,6 +103,11 @@ class BrokenScrollCard(FakeCard):
         raise RuntimeError("scroll failed")
 
 
+class FakeMouse:
+    def wheel(self, delta_x: float, delta_y: float) -> None:
+        return None
+    
+
 class FakePage:
     def __init__(
         self,

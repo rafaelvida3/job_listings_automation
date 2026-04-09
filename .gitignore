@@ -7,3 +7,4 @@ logs/
 output/
 browser_profile/
 config/searches.json
+*.egg-info/

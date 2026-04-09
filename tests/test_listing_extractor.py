@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, cast
 
 import pytest
+from playwright.sync_api import Locator, Page
 
 from job_listings_automation.listing_extractor import ListingExtractor
 from job_listings_automation.models import ListingData
@@ -28,7 +30,7 @@ def listing_extractor() -> ListingExtractor:
 def test_get_locator_text_should_return_empty_string_for_recoverable_errors(
     listing_extractor: ListingExtractor,
 ) -> None:
-    assert listing_extractor.get_locator_text(BrokenLocator(text="anything")) == ""
+    assert listing_extractor.get_locator_text(cast(Locator, BrokenLocator(text="anything"))) == ""
 
 
 def test_extract_listing_data_should_use_fallback_title_and_link_when_detail_data_is_missing(
@@ -53,7 +55,7 @@ def test_extract_listing_data_should_use_fallback_title_and_link_when_detail_dat
     monkeypatch.setattr(listing_extractor, "simulate_description_scroll", lambda current_page: None)
 
     listing = listing_extractor.extract_listing_data(
-        page=page,
+        page=cast(Page, page),
         card=fallback_card,
         source_url="https://example.com/search?keywords=python",
         base_origin="https://example.com",
@@ -105,7 +107,7 @@ def test_collect_listings_from_current_page_should_deduplicate_by_listing_id(
     )
 
     listing_extractor.collect_listings_from_current_page(
-        page=page,
+        page=cast(Page, page),
         listings=listings,
         seen_keys=seen_keys,
         source_url="https://example.com/search",
@@ -125,7 +127,7 @@ def test_collect_listings_from_current_page_should_continue_when_one_card_fails(
     seen_keys: set[str] = set()
     calls = {"count": 0}
 
-    def fake_extract_listing_data(*args, **kwargs) -> ListingData:
+    def fake_extract_listing_data(*args: Any, **kwargs: Any) -> ListingData:
         calls["count"] += 1
         if calls["count"] == 1:
             raise RuntimeError("Broken card")
@@ -144,7 +146,7 @@ def test_collect_listings_from_current_page_should_continue_when_one_card_fails(
     monkeypatch.setattr(listing_extractor, "extract_listing_data", fake_extract_listing_data)
 
     listing_extractor.collect_listings_from_current_page(
-        page=page,
+        page=cast(Page, page),
         listings=listings,
         seen_keys=seen_keys,
         source_url="https://example.com/search",
