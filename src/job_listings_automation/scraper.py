@@ -5,7 +5,8 @@ import random
 from pathlib import Path
 from typing import Optional
 
-from playwright.sync_api import BrowserContext, Error as PlaywrightError, Page, sync_playwright
+from playwright.sync_api import BrowserContext, Page, sync_playwright
+from playwright.sync_api import Error as PlaywrightError
 
 from .browser_session import BrowserSession
 from .exporters import OutputFormat, export_listings
@@ -86,7 +87,9 @@ class ListingsScraper:
                     )
 
                     while True:
-                        current_page_number = self.pagination_navigator.get_current_page_number(page)
+                        current_page_number = self.pagination_navigator.get_current_page_number(
+                            page
+                        )
                         self.logger.info(
                             "Processing source URL %s/%s | result page %s of %s.",
                             search_index,
@@ -95,9 +98,12 @@ class ListingsScraper:
                             total_pages,
                         )
 
-                        if self.pagination_navigator.has_empty_search_results(page):
+                        if (
+                            self.pagination_navigator.has_empty_search_results(page)
+                        ):
                             self.logger.info(
-                                "No exact matches for this search. Recommended cards will be ignored."
+                                "No exact matches for this search."
+                                "Recommended cards will be ignored."
                             )
                             break
 
@@ -112,16 +118,21 @@ class ListingsScraper:
                             self.logger.info("Reached the last result page for current source URL.")
                             break
 
-                        if self.settings.max_pages is not None and current_page_number >= self.settings.max_pages:
+                        if (
+                            self.settings.max_pages is not None
+                            and current_page_number >= self.settings.max_pages
+                        ):
                             self.logger.info(
-                                "Reached the configured max_pages limit (%s) for current source URL.",
+                                "Reached the configured max_pages limit (%s) "
+                                "for current source URL.",
                                 self.settings.max_pages,
                             )
-                            break
 
                         moved_to_next_page = self.pagination_navigator.go_to_next_results_page(page)
                         if not moved_to_next_page:
-                            self.logger.info("Could not move to the next page. Stopping pagination loop.")
+                            self.logger.info(
+                                "Could not move to the next page. Stopping pagination loop."
+                            )
                             break
 
                 output_file = export_listings(
@@ -148,7 +159,11 @@ class ListingsScraper:
             return
 
         try:
-            screenshot_file = self.output_dir.parent / "logs" / f"job_listings_error_{run_timestamp}.png"
+            screenshot_file = (
+                self.output_dir.parent
+                / "logs"
+                / f"job_listings_error_{run_timestamp}.png"
+            )
             page.screenshot(path=str(screenshot_file), full_page=True)
             self.logger.info("Error screenshot saved to %s", screenshot_file)
         except RECOVERABLE_SCREENSHOT_EXCEPTIONS as error:

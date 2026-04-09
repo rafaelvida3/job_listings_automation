@@ -26,4 +26,13 @@ def normalize_listing_url(raw_url: Optional[str], base_origin: str = "") -> str:
     clean_path = parsed_combined_url.path.rstrip("/")
     if clean_path:
         clean_path = f"{clean_path}/"
-    return urlunparse((parsed_combined_url.scheme, parsed_combined_url.netloc, clean_path, "", "", ""))
+    return urlunparse(
+        (
+            parsed_combined_url.scheme,
+            parsed_combined_url.netloc,
+            clean_path,
+            "",
+            "",
+            ""
+        )
+    )

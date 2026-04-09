@@ -7,7 +7,7 @@ name = "job-listings-automation"
 version = "0.1.0"
 description = "Browser automation project for collecting and exporting job listing data."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
   "playwright>=1.53.0",
 ]
@@ -30,14 +30,14 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 files = ["src"]
 mypy_path = "src"
 ignore_missing_imports = true

@@ -13,7 +13,12 @@ from job_listings_automation.settings import AppSettings
 
 
 class FakeLocator:
-    def __init__(self, items: list[Any] | None = None, text: str = "", visible: bool = True) -> None:
+    def __init__(
+            self,
+            items: list[Any] | None = None,
+            text: str = "",
+            visible: bool = True
+        ) -> None:
         self.items = items or []
         self.text = text
         self.visible = visible
@@ -92,7 +97,11 @@ class FakeCard:
 
 
 class FakePage:
-    def __init__(self, *, locator_map: dict[str, Any] | None = None, text_map: dict[str, FakeLocator] | None = None) -> None:
+    def __init__(
+            self, *,
+            locator_map: dict[str, Any] | None = None,
+            text_map: dict[str, FakeLocator] | None = None
+        ) -> None:
         self.locator_map = locator_map or {}
         self.text_map = text_map or {}
         self.mouse = MagicMock()
@@ -138,7 +147,10 @@ def scraper() -> ListingsScraper:
     )
 
 
-def test_run_should_stop_when_empty_state_is_detected(monkeypatch: pytest.MonkeyPatch, scraper: ListingsScraper) -> None:
+def test_run_should_stop_when_empty_state_is_detected(
+        monkeypatch: pytest.MonkeyPatch,
+        scraper: ListingsScraper
+    ) -> None:
     page = MagicMock()
     context = MagicMock()
     context.pages = [page]
@@ -158,8 +170,14 @@ def test_run_should_stop_when_empty_state_is_detected(monkeypatch: pytest.Monkey
     collect_mock = MagicMock()
     export_mock = MagicMock(return_value=Path("/tmp/output/result.txt"))
 
-    monkeypatch.setattr("job_listings_automation.scraper.sync_playwright", lambda: FakePlaywrightContext())
-    monkeypatch.setattr("job_listings_automation.scraper.export_listings", export_mock)
+    monkeypatch.setattr(
+        "job_listings_automation.scraper.sync_playwright",
+        lambda: FakePlaywrightContext()
+    )
+    monkeypatch.setattr(
+        "job_listings_automation.scraper.export_listings",
+        export_mock
+    )
 
     scraper.browser_session.create_context = MagicMock(return_value=(context, page))
     scraper.browser_session.wait_for_access_and_listing_list = MagicMock()
@@ -188,13 +206,23 @@ def test_go_to_next_results_page_should_return_true_when_page_changes(
     page = FakePage(
         locator_map={
             ".jobs-search-pagination__page-state": pagination_state,
-            "button.jobs-search-pagination__button--next, button[aria-label='Ver próxima página'], button[aria-label='View next page']": next_button,
-            "li[data-occludable-job-id]": FakeLocator(items=[FakeCard("1")]),
+            (
+                "button.jobs-search-pagination__button--next, "
+                "button[aria-label='Ver próxima página'], "
+                "button[aria-label='View next page']"
+            ): next_button,
+            "li[data-occludable-job-id]": FakeLocator(
+                items=[FakeCard("1")]
+            ),
         }
     )
 
     page_numbers = iter([1, 2])
-    monkeypatch.setattr(scraper.pagination_navigator, "get_current_page_number", lambda current_page: next(page_numbers))
+    monkeypatch.setattr(
+        scraper.pagination_navigator,
+        "get_current_page_number",
+        lambda current_page: next(page_numbers)
+    )
 
     moved = scraper.pagination_navigator.go_to_next_results_page(page)
 
@@ -216,13 +244,25 @@ def test_extract_listing_data_should_use_fallback_title_and_link_when_detail_dat
     detail_description = FakeLocator(text="Build APIs\n\nMaintain automations")
     page = FakePage(
         locator_map={
-            "div.job-details-jobs-unified-top-card__job-title h1 a, div.job-details-jobs-unified-top-card__job-title h1": detail_title,
+            (
+                "div.job-details-jobs-unified-top-card__job-title h1 a, "
+                "div.job-details-jobs-unified-top-card__job-title h1"
+            ): detail_title,
             "#job-details": detail_description,
         }
     )
 
-    monkeypatch.setattr(scraper.listing_extractor, "click_listing_card", lambda card, listing_id: None)
-    monkeypatch.setattr(scraper.listing_extractor, "simulate_description_scroll", lambda current_page: None)
+    monkeypatch.setattr(
+        scraper.listing_extractor,
+        "click_listing_card",
+        lambda card,
+        listing_id: None
+    )
+    monkeypatch.setattr(
+        scraper.listing_extractor,
+        "simulate_description_scroll",
+        lambda current_page: None
+    )
 
     listing = scraper.listing_extractor.extract_listing_data(
         page=page,
@@ -248,15 +288,46 @@ def test_collect_listings_from_current_page_should_deduplicate_by_listing_id(
 
     extracted_items = iter(
         [
-            ListingData("job-1", "Role A", "https://example.com/jobs/1/", "desc", "source"),
-            ListingData("job-1", "Role A duplicate", "https://example.com/jobs/1/", "desc", "source"),
-            ListingData("job-2", "Role B", "https://example.com/jobs/2/", "desc", "source"),
+            ListingData(
+                "job-1",
+                "Role A",
+                "https://example.com/jobs/1/",
+                "desc",
+                "source"
+            ),
+            ListingData(
+                "job-1",
+                "Role A duplicate",
+                "https://example.com/jobs/1/",
+                "desc",
+                "source"
+            ),
+            ListingData(
+                "job-2",
+                "Role B",
+                "https://example.com/jobs/2/",
+                "desc",
+                "source"
+            ),
         ]
     )
 
-    monkeypatch.setattr(scraper.pagination_navigator, "load_all_listing_cards", lambda current_page: 3)
-    monkeypatch.setattr(scraper.pagination_navigator, "get_current_page_number", lambda current_page: 1)
-    monkeypatch.setattr(scraper.listing_extractor, "extract_listing_data", lambda *args, **kwargs: next(extracted_items))
+    monkeypatch.setattr(
+        scraper.pagination_navigator,
+        "load_all_listing_cards",
+        lambda current_page: 3
+    )
+    monkeypatch.setattr(
+        scraper.pagination_navigator,
+        "get_current_page_number",
+        lambda current_page: 1
+    )
+    monkeypatch.setattr(
+        scraper.listing_extractor,
+        "extract_listing_data",
+        lambda *args,
+        **kwargs: next(extracted_items)
+    )
 
     scraper.listing_extractor.collect_listings_from_current_page(
         page=page,
@@ -287,9 +358,21 @@ def test_collect_listings_from_current_page_should_continue_when_one_card_fails(
 
         return ListingData("job-2", "Role B", "https://example.com/jobs/2/", "desc", "source")
 
-    monkeypatch.setattr(scraper.pagination_navigator, "load_all_listing_cards", lambda current_page: 2)
-    monkeypatch.setattr(scraper.pagination_navigator, "get_current_page_number", lambda current_page: 1)
-    monkeypatch.setattr(scraper.listing_extractor, "extract_listing_data", fake_extract_listing_data)
+    monkeypatch.setattr(
+        scraper.pagination_navigator,
+        "load_all_listing_cards",
+        lambda current_page: 2
+    )
+    monkeypatch.setattr(
+        scraper.pagination_navigator,
+        "get_current_page_number",
+        lambda current_page: 1
+    )
+    monkeypatch.setattr(
+        scraper.listing_extractor,
+        "extract_listing_data",
+        fake_extract_listing_data
+    )
 
     scraper.listing_extractor.collect_listings_from_current_page(
         page=page,
@@ -323,17 +406,40 @@ def test_run_should_close_context_on_success_and_not_take_error_screenshot(
         def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> bool:
             return False
 
-    monkeypatch.setattr("job_listings_automation.scraper.sync_playwright", lambda: FakePlaywrightContext())
+    monkeypatch.setattr(
+        "job_listings_automation.scraper.sync_playwright",
+        lambda: FakePlaywrightContext()
+    )
     monkeypatch.setattr(
         test_scraper.browser_session,
         "create_context",
         MagicMock(return_value=(context, page)),
     )
-    monkeypatch.setattr(test_scraper.browser_session, "wait_for_access_and_listing_list", MagicMock())
-    monkeypatch.setattr(test_scraper.browser_session, "close_context_safely", MagicMock())
-    monkeypatch.setattr(test_scraper.pagination_navigator, "get_total_pages", MagicMock(return_value=1))
-    monkeypatch.setattr(test_scraper.pagination_navigator, "get_current_page_number", MagicMock(return_value=1))
-    monkeypatch.setattr(test_scraper.pagination_navigator, "has_empty_search_results", MagicMock(return_value=True))
+    monkeypatch.setattr(
+        test_scraper.browser_session,
+        "wait_for_access_and_listing_list",
+        MagicMock()
+    )
+    monkeypatch.setattr(
+        test_scraper.browser_session,
+        "close_context_safely",
+        MagicMock()
+    )
+    monkeypatch.setattr(
+        test_scraper.pagination_navigator,
+        "get_total_pages",
+        MagicMock(return_value=1)
+    )
+    monkeypatch.setattr(
+        test_scraper.pagination_navigator,
+        "get_current_page_number",
+        MagicMock(return_value=1)
+    )
+    monkeypatch.setattr(
+        test_scraper.pagination_navigator,
+        "has_empty_search_results",
+        MagicMock(return_value=True)
+    )
     monkeypatch.setattr(
         "job_listings_automation.scraper.export_listings",
         MagicMock(return_value=Path("/tmp/output/result.txt")),
@@ -365,14 +471,25 @@ def test_run_should_take_screenshot_on_error_and_still_close_context(
         def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> bool:
             return False
 
-    monkeypatch.setattr("job_listings_automation.scraper.sync_playwright", lambda: FakePlaywrightContext())
+    monkeypatch.setattr(
+        "job_listings_automation.scraper.sync_playwright",
+        lambda: FakePlaywrightContext()
+    )
     monkeypatch.setattr(
         test_scraper.browser_session,
         "create_context",
         MagicMock(return_value=(context, page)),
     )
-    monkeypatch.setattr(test_scraper.browser_session, "wait_for_access_and_listing_list", MagicMock(side_effect=RuntimeError("boom")))
-    monkeypatch.setattr(test_scraper.browser_session, "close_context_safely", MagicMock())
+    monkeypatch.setattr(
+        test_scraper.browser_session,
+        "wait_for_access_and_listing_list",
+        MagicMock(side_effect=RuntimeError("boom"))
+    )
+    monkeypatch.setattr(
+        test_scraper.browser_session,
+        "close_context_safely",
+        MagicMock()
+    )
 
     with pytest.raises(RuntimeError, match="boom"):
         test_scraper.run(["https://example.com/search"], "2026-04-08_18-00-00")

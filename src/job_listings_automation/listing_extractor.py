@@ -5,7 +5,8 @@ import random
 from typing import Optional
 from urllib.parse import urlparse
 
-from playwright.sync_api import Error as PlaywrightError, Locator, Page, TimeoutError
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import Locator, Page, TimeoutError
 
 from .models import ListingData
 from .pagination import PaginationNavigator
@@ -67,7 +68,10 @@ class ListingExtractor:
             scroll_rounds = self.random_generator.randint(2, 4)
             for _ in range(scroll_rounds):
                 scroll_amount = self.random_generator.randint(200, 500)
-                container.evaluate("(element, amount) => { element.scrollTop += amount; }", scroll_amount)
+                container.evaluate(
+                    "(element, amount) => { element.scrollTop += amount; }",
+                    scroll_amount
+                )
                 page.wait_for_timeout(self.random_generator.randint(800, 1800))
         except RECOVERABLE_EXTRACTION_EXCEPTIONS as error:
             self.logger.debug("Skipping description scroll due to recoverable error: %s", error)
@@ -102,7 +106,11 @@ class ListingExtractor:
         source_url: str,
         base_origin: str,
     ) -> Optional[ListingData]:
-        listing_id = card.get_attribute("data-occludable-job-id") or card.get_attribute("data-job-id") or ""
+        listing_id = (
+            card.get_attribute("data-occludable-job-id")
+            or card.get_attribute("data-job-id")
+            or ""
+        )
 
         card_link_locator = card.locator(LISTING_LINK_SELECTOR)
         fallback_title = self.get_locator_text(card_link_locator) or None
@@ -122,9 +130,15 @@ class ListingExtractor:
         page.wait_for_timeout(1_200)
 
         try:
-            page.wait_for_selector(DETAIL_TITLE_SELECTOR, timeout=self.settings.detail_load_timeout_ms)
+            page.wait_for_selector(
+                DETAIL_TITLE_SELECTOR,
+                timeout=self.settings.detail_load_timeout_ms
+            )
         except TimeoutError:
-            self.logger.warning("Detail title did not load for listing %s", listing_id or "<unknown>")
+            self.logger.warning(
+                "Detail title did not load for listing %s",
+                listing_id or "<unknown>"
+            )
 
         page.wait_for_timeout(
             self.random_generator.randint(
@@ -197,7 +211,8 @@ class ListingExtractor:
                 current_count = current_cards.count()
                 if index >= current_count:
                     self.logger.info(
-                        "Card index %s no longer exists after DOM update on page %s. Current count: %s",
+                        "Card index %s no longer exists after DOM update"
+                        "on page %s. Current count: %s",
                         index,
                         current_page_number,
                         current_count,

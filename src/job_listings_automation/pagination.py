@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 import re
 
-from playwright.sync_api import Error as PlaywrightError, Locator, Page, TimeoutError
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import Locator, Page, TimeoutError
 
 from .selectors import (
     EMPTY_RESULTS_TEXTS,
@@ -188,12 +189,19 @@ class PaginationNavigator:
                 timeout=self.settings.page_load_timeout_ms,
             )
         except TimeoutError:
-            self.logger.warning("Pagination state did not change after clicking the next page button.")
+            self.logger.warning(
+                "Pagination state did not change after clicking"
+                "the next page button."
+            )
             return False
 
         page.wait_for_selector(LISTING_CARD_SELECTOR, timeout=self.settings.page_load_timeout_ms)
         page.wait_for_timeout(1_500)
 
         current_page_number = self.get_current_page_number(page)
-        self.logger.info("Moved from page %s to page %s.", previous_page_number, current_page_number)
+        self.logger.info(
+            "Moved from page %s to page %s.",
+            previous_page_number,
+            current_page_number
+        )
         return current_page_number > previous_page_number

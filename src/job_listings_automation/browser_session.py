@@ -5,10 +5,12 @@ from pathlib import Path
 
 from playwright.sync_api import (
     BrowserContext,
-    Error as PlaywrightError,
     Page,
     Playwright,
     TimeoutError,
+)
+from playwright.sync_api import (
+    Error as PlaywrightError,
 )
 
 from .selectors import LISTING_CARD_SELECTOR

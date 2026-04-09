@@ -11,7 +11,11 @@ from .settings import get_now
 OutputFormat = Literal["txt", "json"]
 
 
-def build_output_file_path(output_dir: Path, run_timestamp: str, output_format: OutputFormat) -> Path:
+def build_output_file_path(
+        output_dir: Path,
+        run_timestamp: str,
+        output_format: OutputFormat
+    ) -> Path:
     return output_dir / f"job_listings_{run_timestamp}.{output_format}"
 
 

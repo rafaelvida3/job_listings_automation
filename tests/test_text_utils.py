@@ -1,5 +1,4 @@
-from job_listings_automation.text_utils import (clean_multiline_text,
-                                                clean_single_line)
+from job_listings_automation.text_utils import clean_multiline_text, clean_single_line
 
 
 def test_clean_single_line_should_collapse_whitespace() -> None:
