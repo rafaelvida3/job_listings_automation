@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 from .models import ListingData
 from .settings import get_now
@@ -12,14 +12,14 @@ OutputFormat = Literal["txt", "json"]
 
 
 def build_output_file_path(
-        output_dir: Path,
-        run_timestamp: str,
-        output_format: OutputFormat
-    ) -> Path:
+    output_dir: Path,
+    run_timestamp: str,
+    output_format: OutputFormat,
+) -> Path:
     return output_dir / f"job_listings_{run_timestamp}.{output_format}"
 
 
-def format_text_field(value: Optional[str]) -> str:
+def format_text_field(value: str | None) -> str:
     return value if value else "N/A"
 
 

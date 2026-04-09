@@ -9,6 +9,7 @@ def setup_logger(log_dir: Path, run_timestamp: str) -> logging.Logger:
     logger = logging.getLogger("job_listings_automation")
     logger.setLevel(logging.INFO)
     logger.handlers.clear()
+    logger.propagate = False
 
     log_file = log_dir / f"job_listings_{run_timestamp}.log"
     formatter = logging.Formatter(
@@ -24,5 +25,4 @@ def setup_logger(log_dir: Path, run_timestamp: str) -> logging.Logger:
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-
     return logger

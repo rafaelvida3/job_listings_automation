@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from job_listings_automation.text_utils import clean_multiline_text, clean_single_line
 
 

@@ -8,7 +8,7 @@ from job_listings_automation.models import ListingData
 
 
 def test_export_listings_should_create_json_file(tmp_path) -> None:
-    logger = logging.getLogger("test")
+    logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(
             listing_id="job-1",
@@ -35,7 +35,7 @@ def test_export_listings_should_create_json_file(tmp_path) -> None:
 
 
 def test_export_listings_should_create_text_file(tmp_path) -> None:
-    logger = logging.getLogger("test")
+    logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(
             listing_id="job-1",
@@ -60,7 +60,7 @@ def test_export_listings_should_create_text_file(tmp_path) -> None:
 
 
 def test_export_listings_should_render_na_in_text_when_fields_are_missing(tmp_path) -> None:
-    logger = logging.getLogger("test")
+    logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(
             listing_id="",
@@ -86,7 +86,7 @@ def test_export_listings_should_render_na_in_text_when_fields_are_missing(tmp_pa
 
 
 def test_export_listings_should_keep_null_in_json_when_fields_are_missing(tmp_path) -> None:
-    logger = logging.getLogger("test")
+    logger = logging.getLogger("test-exporters")
     listings = [
         ListingData(
             listing_id="",

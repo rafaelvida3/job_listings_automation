@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
 from urllib.parse import urljoin, urlparse, urlunparse
 
 
-def normalize_listing_url(raw_url: Optional[str], base_origin: str = "") -> str:
+def normalize_listing_url(raw_url: str | None, base_origin: str = "") -> str:
     if not raw_url:
         return ""
 
@@ -33,6 +32,6 @@ def normalize_listing_url(raw_url: Optional[str], base_origin: str = "") -> str:
             clean_path,
             "",
             "",
-            ""
+            "",
         )
     )

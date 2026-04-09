@@ -3,17 +3,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from playwright.sync_api import (
-    BrowserContext,
-    Page,
-    Playwright,
-    TimeoutError,
-)
-from playwright.sync_api import (
-    Error as PlaywrightError,
-)
+from playwright.sync_api import BrowserContext, Page, Playwright, TimeoutError
+from playwright.sync_api import Error as PlaywrightError
 
-from .selectors import LISTING_CARD_SELECTOR
+from .selectors import DEFAULT_SELECTOR_PROFILE, SelectorProfile
 from .settings import AppSettings
 
 RECOVERABLE_BROWSER_EXCEPTIONS = (PlaywrightError, RuntimeError, OSError)
@@ -25,10 +18,12 @@ class BrowserSession:
         settings: AppSettings,
         logger: logging.Logger,
         profile_dir: Path,
+        selectors: SelectorProfile = DEFAULT_SELECTOR_PROFILE,
     ) -> None:
         self.settings = settings
         self.logger = logger
         self.profile_dir = profile_dir
+        self.selectors = selectors
 
     def create_context(self, playwright: Playwright) -> tuple[BrowserContext, Page]:
         context = playwright.chromium.launch_persistent_context(
@@ -40,26 +35,30 @@ class BrowserSession:
         )
         context.set_default_timeout(self.settings.page_load_timeout_ms)
         page = context.pages[0] if context.pages else context.new_page()
-
         return context, page
 
     def wait_for_access_and_listing_list(self, page: Page) -> None:
         try:
-            page.wait_for_selector(LISTING_CARD_SELECTOR, timeout=15_000)
+            page.wait_for_selector(self.selectors.listing_card, timeout=15_000)
             self.logger.info("Listing list found without manual confirmation.")
             return
         except TimeoutError:
-            self.logger.info("Listing list not found quickly. Manual confirmation may be required.")
+            self.logger.info(
+                "Listing list was not available quickly. Manual confirmation may be required."
+            )
 
         input(
             "\nOpen the browser session, complete any required access steps, "
             "then press Enter here to continue...\n"
         )
-        page.wait_for_selector(LISTING_CARD_SELECTOR, timeout=60_000)
+        page.wait_for_selector(self.selectors.listing_card, timeout=60_000)
         self.logger.info("Listing list found after manual confirmation.")
 
     def wait_for_listing_list(self, page: Page) -> None:
-        page.wait_for_selector(LISTING_CARD_SELECTOR, timeout=self.settings.page_load_timeout_ms)
+        page.wait_for_selector(
+            self.selectors.listing_card,
+            timeout=self.settings.page_load_timeout_ms,
+        )
         self.logger.info("Listing list is ready on the current source URL.")
 
     def close_context_safely(self, context: BrowserContext | None) -> None:

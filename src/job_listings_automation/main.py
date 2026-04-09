@@ -19,7 +19,7 @@ from .settings import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Scrape job listings from configured search result pages.",
+        description="Collect and export job listings from configured result pages.",
     )
     parser.add_argument(
         "--input",
@@ -53,15 +53,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_scraper() -> None:
-    args = parse_args()
-    run_timestamp = build_timestamp()
-    ensure_directories()
-    settings = AppSettings(
+def build_settings(args: argparse.Namespace) -> AppSettings:
+    return AppSettings(
         headless=args.headless,
         max_pages=args.max_pages,
         take_screenshot_on_error=args.take_screenshot_on_error,
     )
+
+
+def run_scraper() -> None:
+    args = parse_args()
+    run_timestamp = build_timestamp()
+    ensure_directories()
+
+    settings = build_settings(args)
     logger = setup_logger(LOG_DIR, run_timestamp)
     search_urls = load_search_urls(config_file=args.input)
 
@@ -76,7 +81,6 @@ def run_scraper() -> None:
         run_timestamp=run_timestamp,
         output_format=args.output_format,
     )
-
     logger.info("Output file: %s", output_file)
 
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from job_listings_automation.url_utils import normalize_listing_url
 
 
@@ -16,7 +18,6 @@ def test_normalize_listing_url_should_return_empty_string_for_none() -> None:
     assert result == ""
 
 
-def test_normalize_listing_url_should_return_empty_string_for_relative_url_without_base_origin(
-) -> None:
+def test_normalize_listing_url_should_return_empty_string_without_base_origin() -> None:
     result = normalize_listing_url("/positions/987")
     assert result == ""

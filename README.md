@@ -1,19 +1,22 @@
 # Job Listings Automation
 
-A Python automation tool that collects job listing data from configured search result pages, normalizes the extracted content, and exports structured outputs for later review.
+A Python browser automation project that collects listing data from configured result pages,
+normalizes the extracted content, and exports deterministic outputs for later review.
 
-This project is designed as a maintainable scraping/automation workflow rather than a one-off script. It emphasizes separation of concerns, predictable outputs, test coverage for core behaviors, and defensive handling for unstable browser flows.
+This repository is intentionally structured as a maintainable automation workflow instead of a
+single long script. The goal is to show practical engineering decisions: clear responsibility
+boundaries, typed settings, predictable exports, and resilience around unstable browser behavior.
 
-## Highlights
+## What this project demonstrates
 
-- Persistent browser session for authenticated browsing when needed
-- Config-driven input URLs
-- Incremental extraction from paginated result pages
-- Deduplication by stable listing identifiers
-- Text and JSON export formats
-- Error logging and optional screenshot capture
-- Unit tests for core parsing and scraping behavior
-- CLI flags for headless mode, page limits, input source, and output format
+- Modular design instead of a monolithic scraper
+- Typed runtime settings and explicit validation
+- Selector abstraction for easier maintenance when the target layout changes
+- Safe pagination handling with stop conditions and empty-state detection
+- Deterministic text and JSON exporters
+- Logging and optional fatal-error screenshots
+- Unit tests focused on failure boundaries and scraping flow
+- CI checks for lint, type checking, and tests
 
 ## Architecture
 
@@ -22,79 +25,107 @@ The codebase is split into focused modules:
 - `main.py`: CLI entrypoint and runtime wiring
 - `settings.py`: typed configuration, paths, timestamps, and config loading
 - `browser_session.py`: browser/context lifecycle and access bootstrapping
-- `pagination.py`: pagination state, empty-state detection, scrolling, and page transitions
-- `listing_extractor.py`: card interaction, detail extraction, fallback handling, and deduplication flow
-- `exporters.py`: output generation for text and JSON formats
-- `logger_setup.py`: run-specific logging
-- `models.py`: typed data model for listings
+- `pagination.py`: page state parsing, empty-state detection, scrolling, and navigation
+- `listing_extractor.py`: card interaction, fallback extraction, normalization, and deduplication
+- `selectors.py`: selector profile abstraction for the target page structure
+- `exporters.py`: text and JSON output generation
+- `logger_setup.py`: run-specific logger configuration
+- `models.py`: typed listing model
 - `text_utils.py` and `url_utils.py`: normalization helpers
 
-## Why this project is useful in a portfolio
+## Why the selector abstraction matters
 
-This repository demonstrates more than basic browser automation:
-
-- modular design instead of a single large script
-- clear responsibility boundaries
-- resilience against partial failures and DOM changes
-- reusable configuration and output pipeline
-- tests that validate critical scraping behaviors
-
-In practice, this means the project is easier to extend, debug, and operate than a quick prototype.
+Automation code usually fails at the boundary with the external UI. In this project, selector
+strings are grouped into a `SelectorProfile` instead of being spread across the codebase. That is
+small on purpose, but it reduces coupling and makes layout maintenance more explicit.
 
 ## Data flow
 
-1. Load configured search URLs from a JSON file
+1. Load search URLs from JSON configuration
 2. Start a persistent browser session
-3. Open each search result page
-4. Detect access readiness and result availability
-5. Scroll and load visible listing cards
-6. Open each listing and extract normalized data
+3. Open each configured result page
+4. Confirm that the listing area is accessible
+5. Scroll until visible cards are loaded
+6. Open each listing and extract normalized fields
 7. Skip duplicates using listing ID or canonical URL
-8. Continue through pagination until completion or configured limit
-9. Export the collected dataset as `.txt` or `.json`
+8. Paginate until the last page or the configured page limit
+9. Export the collected listings as `.txt` or `.json`
 
 ## Defensive behaviors
 
 The scraper includes a few deliberate safeguards:
 
-- fallback title/link extraction when detail content is incomplete
+- fallback title and link extraction when the detail panel is incomplete
 - duplicate prevention across pages
-- tolerance for one-off card failures without aborting the whole run
+- per-card failure isolation, so one broken card does not abort the entire page
 - empty-result detection to avoid collecting unrelated recommendations
 - optional screenshot capture on fatal errors
+- explicit stop condition for `max_pages`
 
-These choices make the workflow more reliable in real-world browser automation scenarios.
+## Example output
+
+### JSON
+
+```json
+{
+  "generated_at": "2026-04-08T19:40:00-03:00",
+  "source_urls": [
+    "https://example.com/search?page=1"
+  ],
+  "total_listings": 1,
+  "listings": [
+    {
+      "listing_id": "job-123",
+      "source_url": "https://example.com/search?page=1",
+      "title": "Senior Python Developer",
+      "link": "https://example.com/jobs/123/",
+      "description": "Build APIs and maintain automation workflows."
+    }
+  ]
+}
+```
+
+### Log sample
+
+```text
+2026-04-08 19:40:00 | INFO | Scraper started.
+2026-04-08 19:40:02 | INFO | Opening source URL 1/1
+2026-04-08 19:40:04 | INFO | Processing source URL 1/1 | result page 1 of 3.
+2026-04-08 19:40:08 | INFO | Collected 1 listings in total | current page 1 | Senior Python Developer
+2026-04-08 19:40:10 | INFO | Reached the configured max_pages limit (1) for current source URL.
+2026-04-08 19:40:10 | INFO | Scraper finished successfully.
+```
 
 ## CLI usage
 
-Default run:
+Run with the default configuration:
 
 ```bash
-python run.py
+python -m job_listings_automation
 ```
 
-Headless run with JSON output:
+Run headless and export JSON:
 
 ```bash
-python run.py --headless --output-format json
+python -m job_listings_automation --headless --output-format json
 ```
 
-Limit the number of processed pages:
+Limit the number of processed pages per source URL:
 
 ```bash
-python run.py --max-pages 2
+python -m job_listings_automation --max-pages 2
 ```
 
 Use a custom input config:
 
 ```bash
-python run.py --input config/searches.json
+python -m job_listings_automation --input config/searches.json
 ```
 
 Disable screenshot capture on fatal errors:
 
 ```bash
-python run.py --no-take-screenshot-on-error
+python -m job_listings_automation --no-take-screenshot-on-error
 ```
 
 ## Input format
@@ -109,74 +140,16 @@ Expected JSON structure:
 }
 ```
 
-## Output formats
-
-### Text output
-
-The text export is designed for fast manual review and includes:
-
-- generation timestamp
-- source URLs
-- total listings collected
-- listing ID
-- source URL
-- title
-- canonical link
-- normalized description
-
-### JSON output
-
-The JSON export is better suited for downstream processing, integrations, or future persistence.
-
-## Testing
-
-Run the full test suite with:
-
-```bash
-pytest
-```
-
-The tests focus on behaviors that matter most in automation code:
-
-- empty-state handling
-- pagination transitions
-- fallback extraction
-- deduplication
-- resilience when a single card fails
-- output generation helpers
-- CLI argument handling
-
-## Trade-offs and limitations
-
-This project intentionally favors simplicity over framework-heavy abstractions.
-
-Current limitations:
-
-- selectors are tailored to a specific page structure and may require maintenance if the UI changes
-- dynamic anti-bot protections can still affect browser automation reliability
-- there is no persistence layer yet; output is file-based by design
-- tests are unit-focused, not full end-to-end browser validation
-
-These are acceptable trade-offs for a portfolio project focused on maintainability, clarity, and practical automation.
-
-## Possible next improvements
-
-- add fixture-based integration tests for HTML snapshots
-- persist runs to a database or lightweight local store
-- add retry/backoff strategy for transient navigation failures
-- support alternate selector profiles for different layouts
-- generate summary metrics per run
-
 ## Setup
 
-Install dependencies:
+Install the project and development dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -e ".[dev]"
 playwright install
 ```
 
-Create the input config:
+Create the runtime config:
 
 ```bash
 cp config/searches.example.json config/searches.json
@@ -185,5 +158,29 @@ cp config/searches.example.json config/searches.json
 Then run:
 
 ```bash
-python run.py
+python -m job_listings_automation
 ```
+
+## Testing
+
+Run the full quality suite with:
+
+```bash
+ruff check .
+mypy
+pytest -q
+```
+
+## Trade-offs and limitations
+
+This project intentionally favors clarity over framework-heavy abstractions.
+
+Current limitations:
+
+- selectors are still tied to one target layout, even though they are now centralized
+- dynamic anti-bot protections can still affect automation reliability
+- outputs are file-based by design; there is no persistence layer yet
+- tests are unit-focused and use fakes instead of full browser sessions
+
+These are reasonable trade-offs for a portfolio project focused on maintainability,
+practicality, and clean automation code.

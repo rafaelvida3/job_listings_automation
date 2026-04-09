@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def clean_single_line(text: str) -> str:
     return " ".join(text.split()).strip()
 
