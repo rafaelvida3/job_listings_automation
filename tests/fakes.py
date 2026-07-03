@@ -121,7 +121,7 @@ class FakePage:
         self.waited_timeouts: list[int] = []
         self.waited_selectors: list[tuple[str, int | None]] = []
         self.waited_functions: list[dict[str, Any]] = []
-        self.goto_calls: list[tuple[str, str | None]] = []
+        self.goto_calls: list[tuple[str, str | None, int | None]] = []
         self.screenshot_calls: list[dict[str, Any]] = []
 
     def locator(self, selector: str) -> Any:
@@ -139,8 +139,8 @@ class FakePage:
     def wait_for_function(self, script: str, arg: dict[str, Any], timeout: int) -> None:
         self.waited_functions.append({"script": script, "arg": arg, "timeout": timeout})
 
-    def goto(self, url: str, wait_until: str | None = None) -> None:
-        self.goto_calls.append((url, wait_until))
+    def goto(self, url: str, wait_until: str | None = None, timeout: int | None = None) -> None:
+        self.goto_calls.append((url, wait_until, timeout))
 
     def screenshot(self, path: str, full_page: bool) -> None:
         self.screenshot_calls.append({"path": path, "full_page": full_page})

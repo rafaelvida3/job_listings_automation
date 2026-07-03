@@ -4,7 +4,7 @@ import logging
 import random
 from pathlib import Path
 
-from playwright.sync_api import BrowserContext, Page, sync_playwright
+from playwright.sync_api import BrowserContext, Page, TimeoutError, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 
 from .browser_session import BrowserSession
@@ -66,28 +66,27 @@ class ListingsScraper:
         page: Page | None = None
         context: BrowserContext | None = None
 
-        try:
-            with sync_playwright() as playwright:
-                context, page = self.browser_session.create_context(playwright)
+        with sync_playwright() as playwright:
+            context, page = self.browser_session.create_context(playwright)
 
-                try:
-                    listings, seen_keys = self._collect_all_listings(page, search_urls)
-                    output_file = export_listings(
-                        listings=listings,
-                        output_dir=self.output_dir,
-                        run_timestamp=run_timestamp,
-                        logger=self.logger,
-                        source_urls=search_urls,
-                        output_format=output_format,
-                    )
-                    self.logger.info("Scraper finished successfully.")
-                    return output_file
-                finally:
-                    self.browser_session.close_context_safely(context)
-        except Exception as error:
-            self.logger.exception("Fatal error during execution: %s", error)
-            self.take_error_screenshot(page, run_timestamp)
-            raise
+            try:
+                listings, seen_keys = self._collect_all_listings(page, search_urls)
+                output_file = export_listings(
+                    listings=listings,
+                    output_dir=self.output_dir,
+                    run_timestamp=run_timestamp,
+                    logger=self.logger,
+                    source_urls=search_urls,
+                    output_format=output_format,
+                )
+                self.logger.info("Scraper finished successfully.")
+                return output_file
+            except Exception as error:
+                self.logger.exception("Fatal error during execution: %s", error)
+                self.take_error_screenshot(page, run_timestamp)
+                raise
+            finally:
+                self.browser_session.close_context_safely(context)
 
     def take_error_screenshot(self, page: Page | None, run_timestamp: str) -> None:
         if page is None or not self.settings.take_screenshot_on_error:
@@ -112,14 +111,23 @@ class ListingsScraper:
         has_checked_access = False
 
         for search_index, search_url in enumerate(search_urls, start=1):
-            self._open_search_url(
+            opened = self._open_search_url(
                 page=page,
                 search_url=search_url,
                 search_index=search_index,
                 total_sources=len(search_urls),
                 has_checked_access=has_checked_access,
             )
-            has_checked_access = True
+
+            if not opened:
+                self.logger.warning(
+                    "Skipping source URL %s/%s after navigation failure.",
+                    search_index,
+                    len(search_urls),
+                )
+                continue
+
+            has_checked_access = has_checked_access or opened
             self._collect_from_search_url(
                 page=page,
                 search_url=search_url,
@@ -138,15 +146,38 @@ class ListingsScraper:
         search_index: int,
         total_sources: int,
         has_checked_access: bool,
-    ) -> None:
+    ) -> bool:
         self.logger.info("Opening source URL %s/%s", search_index, total_sources)
-        page.goto(search_url, wait_until="domcontentloaded")
+
+        try:
+            page.goto(
+                search_url,
+                wait_until="domcontentloaded",
+                timeout=self.settings.page_load_timeout_ms,
+            )
+        except TimeoutError as error:
+            self.logger.error(
+                "Timeout loading source URL %s/%s: %s",
+                search_index,
+                total_sources,
+                error,
+            )
+            return False
+        except PlaywrightError as error:
+            self.logger.error(
+                "Playwright error loading source URL %s/%s: %s",
+                search_index,
+                total_sources,
+                error,
+            )
+            return False
 
         if has_checked_access:
             self.browser_session.wait_for_listing_list(page)
-            return
+            return True
 
         self.browser_session.wait_for_access_and_listing_list(page)
+        return True
 
     def _collect_from_search_url(
         self,
