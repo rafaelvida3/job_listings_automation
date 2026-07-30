@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import random
+from datetime import datetime
 from typing import Any, cast
 from urllib.parse import urlparse
 
@@ -11,8 +12,9 @@ from playwright.sync_api import Locator, Page, TimeoutError
 from .language_filter import ListingLanguageFilter, PortugueseListingFilter
 from .models import ListingData
 from .pagination import PaginationNavigator
+from .publication_dates import find_relative_publication_text, parse_relative_publication_datetime
 from .selectors import DEFAULT_SELECTOR_PROFILE, SelectorProfile
-from .settings import AppSettings
+from .settings import AppSettings, get_now
 from .text_utils import clean_multiline_text, clean_single_line
 from .url_utils import normalize_listing_url
 
@@ -70,6 +72,14 @@ class ListingExtractor:
         return (
             card.get_attribute("data-occludable-job-id") or card.get_attribute("data-job-id") or ""
         )
+
+    def get_publication_relative_text(self, card: Any) -> str | None:
+        try:
+            card_text = card.inner_text(timeout=5_000)
+        except RECOVERABLE_EXTRACTION_EXCEPTIONS:
+            return None
+
+        return find_relative_publication_text(card_text)
 
     def simulate_description_scroll(self, page: Page) -> None:
         try:
@@ -138,9 +148,16 @@ class ListingExtractor:
         card: Any,
         source_url: str,
         base_origin: str,
+        collected_at: datetime | None = None,
     ) -> ListingData | None:
+        effective_collected_at = collected_at or get_now()
         listing_id = self.get_listing_id(card)
         fallback_title, fallback_link = self.get_fallback_listing_data(card, base_origin)
+        published_relative_text = self.get_publication_relative_text(card)
+        published_at = parse_relative_publication_datetime(
+            published_relative_text,
+            effective_collected_at,
+        )
 
         self.click_listing_card(card, listing_id)
         page.wait_for_timeout(1_200)
@@ -179,6 +196,9 @@ class ListingExtractor:
             link=link,
             description=description,
             source_url=source_url,
+            published_relative_text=published_relative_text,
+            published_at=published_at,
+            collected_at=effective_collected_at,
         )
 
     def collect_listings_from_current_page(
@@ -191,6 +211,7 @@ class ListingExtractor:
         current_page_number = self.pagination_navigator.get_current_page_number(page)
         self.pagination_navigator.load_all_listing_cards(page)
         base_origin = self.get_base_origin(source_url)
+        collected_at = get_now()
 
         cards = page.locator(self.selectors.listing_card)
         total_cards = cards.count()
@@ -208,6 +229,7 @@ class ListingExtractor:
                     seen_keys=seen_keys,
                     source_url=source_url,
                     base_origin=base_origin,
+                    collected_at=collected_at,
                     current_page_number=current_page_number,
                     index=index,
                 )
@@ -234,6 +256,7 @@ class ListingExtractor:
         seen_keys: set[str],
         source_url: str,
         base_origin: str,
+        collected_at: datetime,
         current_page_number: int,
         index: int,
     ) -> None:
@@ -246,7 +269,13 @@ class ListingExtractor:
         card.scroll_into_view_if_needed(timeout=5_000)
         page.wait_for_timeout(500)
 
-        listing_data = self.extract_listing_data(page, card, source_url, base_origin)
+        listing_data = self.extract_listing_data(
+            page,
+            card,
+            source_url,
+            base_origin,
+            collected_at,
+        )
         if listing_data is None:
             return
 

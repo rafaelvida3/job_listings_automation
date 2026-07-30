@@ -72,6 +72,7 @@ class FakeCard:
         listing_id: str = "",
         fallback_title: str = "",
         fallback_href: str | None = None,
+        text: str = "",
     ) -> None:
         self.attributes = {
             "data-occludable-job-id": listing_id,
@@ -80,6 +81,7 @@ class FakeCard:
         self.link_locator = FakeLinkLocator(text=fallback_title, href=fallback_href)
         self.clicked = False
         self.scrolled = False
+        self.text = text
         self.evaluated_scripts: list[tuple[str, Any]] = []
 
     def get_attribute(self, name: str) -> str | None:
@@ -87,6 +89,9 @@ class FakeCard:
 
     def locator(self, selector: str) -> FakeLocator:
         return self.link_locator
+
+    def inner_text(self, timeout: int = 0) -> str:
+        return self.text
 
     def click(self, timeout: int = 0) -> None:
         self.clicked = True

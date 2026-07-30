@@ -9,6 +9,7 @@ class SelectorProfile:
     listing_link: str
     detail_title: str
     detail_description: str
+    detail_published_at: str
     pagination_state: str
     next_page_button: str
     empty_results_texts: tuple[str, ...]
@@ -22,6 +23,9 @@ DEFAULT_SELECTOR_PROFILE = SelectorProfile(
         "div.job-details-jobs-unified-top-card__job-title h1"
     ),
     detail_description="#job-details",
+    detail_published_at=(
+        "div.job-details-jobs-unified-top-card__tertiary-description-container strong > span"
+    ),
     pagination_state=".jobs-search-pagination__page-state",
     next_page_button=(
         "button.jobs-search-pagination__button--next, "
