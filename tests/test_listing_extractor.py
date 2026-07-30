@@ -15,6 +15,11 @@ from job_listings_automation.settings import AppSettings
 from .fakes import BrokenLocator, FakeCard, FakeLocator, FakePage
 
 
+class AcceptAllLanguageFilter:
+    def is_portuguese(self, listing: ListingData) -> bool:
+        return True
+
+
 @pytest.fixture
 def listing_extractor() -> ListingExtractor:
     settings = AppSettings(
@@ -24,7 +29,12 @@ def listing_extractor() -> ListingExtractor:
     )
     logger = logging.getLogger("test-listing-extractor")
     navigator = PaginationNavigator(settings, logger)
-    return ListingExtractor(settings=settings, logger=logger, pagination_navigator=navigator)
+    return ListingExtractor(
+        settings=settings,
+        logger=logger,
+        pagination_navigator=navigator,
+        language_filter=AcceptAllLanguageFilter(),
+    )
 
 
 def test_get_locator_text_should_return_empty_string_for_recoverable_errors(
@@ -39,11 +49,11 @@ def test_extract_listing_data_should_use_fallback_title_and_link_when_detail_dat
 ) -> None:
     fallback_card = FakeCard(
         listing_id="job-123",
-        fallback_title="Senior Python Developer",
+        fallback_title="Desenvolvedor Python Pleno",
         fallback_href="/jobs/view/123",
     )
     detail_title = FakeLocator(text="")
-    detail_description = FakeLocator(text="Build APIs\n\nMaintain automations")
+    detail_description = FakeLocator(text="Desenvolver APIs e manter automações")
     page = FakePage(
         locator_map={
             DEFAULT_SELECTOR_PROFILE.detail_title: detail_title,
@@ -62,9 +72,36 @@ def test_extract_listing_data_should_use_fallback_title_and_link_when_detail_dat
     )
 
     assert listing is not None
-    assert listing.title == "Senior Python Developer"
+    assert listing.title == "Desenvolvedor Python Pleno"
     assert listing.link == "https://example.com/jobs/view/123/"
-    assert listing.description == "Build APIs\nMaintain automations"
+    assert listing.description == "Desenvolver APIs e manter automações"
+
+
+def test_extract_listing_data_should_return_text_before_language_filtering(
+    monkeypatch: pytest.MonkeyPatch,
+    listing_extractor: ListingExtractor,
+) -> None:
+    detail_title = FakeLocator(text="Senior Python Developer")
+    detail_description = FakeLocator(text="Build APIs and maintain automation workflows")
+    page = FakePage(
+        locator_map={
+            DEFAULT_SELECTOR_PROFILE.detail_title: detail_title,
+            DEFAULT_SELECTOR_PROFILE.detail_description: detail_description,
+        }
+    )
+
+    monkeypatch.setattr(listing_extractor, "click_listing_card", lambda card, listing_id: None)
+    monkeypatch.setattr(listing_extractor, "simulate_description_scroll", lambda current_page: None)
+
+    listing = listing_extractor.extract_listing_data(
+        page=cast(Page, page),
+        card=FakeCard(listing_id="job-456", fallback_title="Senior Python Developer"),
+        source_url="https://example.com/search?keywords=python",
+        base_origin="https://example.com",
+    )
+    assert listing is not None
+    assert listing.title == "Senior Python Developer"
+    assert listing.description == "Build APIs and maintain automation workflows"
 
 
 def test_collect_listings_from_current_page_should_deduplicate_by_listing_id(
@@ -156,3 +193,50 @@ def test_collect_listings_from_current_page_should_continue_when_one_card_fails(
     assert listings[0].listing_id == "job-2"
     assert seen_keys == {"job-2"}
     assert 1_000 in page.waited_timeouts
+
+
+def test_collect_listings_from_current_page_should_skip_non_portuguese_listing(
+    monkeypatch: pytest.MonkeyPatch,
+    listing_extractor: ListingExtractor,
+) -> None:
+    cards = FakeLocator(items=[FakeCard("job-1")])
+    page = FakePage(locator_map={DEFAULT_SELECTOR_PROFILE.listing_card: cards})
+    listings: list[ListingData] = []
+    seen_keys: set[str] = set()
+
+    monkeypatch.setattr(
+        listing_extractor.pagination_navigator,
+        "load_all_listing_cards",
+        lambda current_page: 1,
+    )
+    monkeypatch.setattr(
+        listing_extractor.pagination_navigator,
+        "get_current_page_number",
+        lambda current_page: 1,
+    )
+    monkeypatch.setattr(
+        listing_extractor,
+        "extract_listing_data",
+        lambda *args, **kwargs: ListingData(
+            "job-1",
+            "Python Developer",
+            "https://example.com/jobs/1/",
+            "Build web applications.",
+            "source",
+        ),
+    )
+    monkeypatch.setattr(
+        listing_extractor.language_filter,
+        "is_portuguese",
+        lambda listing: False,
+    )
+
+    listing_extractor.collect_listings_from_current_page(
+        page=cast(Page, page),
+        listings=listings,
+        seen_keys=seen_keys,
+        source_url="https://example.com/search",
+    )
+
+    assert listings == []
+    assert seen_keys == set()

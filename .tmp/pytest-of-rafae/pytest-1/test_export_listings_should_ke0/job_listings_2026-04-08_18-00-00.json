@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-07-30T00:20:00.332597-03:00",
+  "source_urls": [
+    "https://example.com/search/python"
+  ],
+  "total_listings": 1,
+  "listings": [
+    {
+      "listing_id": "",
+      "source_url": "https://example.com/search/python",
+      "title": null,
+      "link": null,
+      "description": null
+    }
+  ]
+}

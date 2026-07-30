@@ -1,0 +1,14 @@
+Generated at: 2026-07-30T00:20:00.329699-03:00
+Source URLs:
+- https://example.com/search/python
+Total listings: 1
+
+====================================================================================================
+LISTING #1
+Listing ID: N/A
+Source URL: https://example.com/search/python
+Title: N/A
+Link: N/A
+Description:
+N/A
+

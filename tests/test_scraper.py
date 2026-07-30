@@ -57,20 +57,10 @@ def test_run_should_stop_when_empty_state_is_detected(
         wait_for_access_mock,
     )
     monkeypatch.setattr(
-        scraper.browser_session,
-        "wait_for_listing_list",
-        wait_for_listing_list_mock
+        scraper.browser_session, "wait_for_listing_list", wait_for_listing_list_mock
     )
-    monkeypatch.setattr(
-        scraper.browser_session,
-        "close_context_safely",
-        close_context_mock
-    )
-    monkeypatch.setattr(
-        scraper.pagination_navigator,
-        "get_total_pages",
-        get_total_pages_mock
-    )
+    monkeypatch.setattr(scraper.browser_session, "close_context_safely", close_context_mock)
+    monkeypatch.setattr(scraper.pagination_navigator, "get_total_pages", get_total_pages_mock)
     monkeypatch.setattr(
         scraper.pagination_navigator,
         "get_current_page_number",

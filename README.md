@@ -57,6 +57,7 @@ The scraper includes a few deliberate safeguards:
 
 - fallback title and link extraction when the detail panel is incomplete
 - duplicate prevention across pages
+- language detection with Lingua, exporting only listings written in Portuguese
 - per-card failure isolation, so one broken card does not abort the entire page
 - empty-result detection to avoid collecting unrelated recommendations
 - optional screenshot capture on fatal errors

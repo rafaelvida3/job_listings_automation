@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Locator, Page, TimeoutError
 
+from .language_filter import ListingLanguageFilter, PortugueseListingFilter
 from .models import ListingData
 from .pagination import PaginationNavigator
 from .selectors import DEFAULT_SELECTOR_PROFILE, SelectorProfile
@@ -26,12 +27,14 @@ class ListingExtractor:
         pagination_navigator: PaginationNavigator,
         selectors: SelectorProfile = DEFAULT_SELECTOR_PROFILE,
         random_generator: random.Random | None = None,
+        language_filter: ListingLanguageFilter | None = None,
     ) -> None:
         self.settings = settings
         self.logger = logger
         self.pagination_navigator = pagination_navigator
         self.selectors = selectors
         self.random_generator = random_generator or random.Random()
+        self.language_filter = language_filter or PortugueseListingFilter()
 
     def get_base_origin(self, url: str) -> str:
         parsed_url = urlparse(url)
@@ -245,6 +248,13 @@ class ListingExtractor:
 
         listing_data = self.extract_listing_data(page, card, source_url, base_origin)
         if listing_data is None:
+            return
+
+        if not self.language_filter.is_portuguese(listing_data):
+            self.logger.info(
+                "Skipping non-Portuguese listing %s",
+                listing_data.listing_id or listing_data.link or "<unknown>",
+            )
             return
 
         unique_key = listing_data.listing_id or listing_data.link

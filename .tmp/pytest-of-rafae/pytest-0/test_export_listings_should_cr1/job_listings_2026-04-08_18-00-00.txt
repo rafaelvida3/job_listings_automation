@@ -1,0 +1,14 @@
+Generated at: 2026-07-30T00:14:52.482592-03:00
+Source URLs:
+- https://example.com/search/python
+Total listings: 1
+
+====================================================================================================
+LISTING #1
+Listing ID: job-1
+Source URL: https://example.com/search/python
+Title: Python Developer
+Link: https://example.com/jobs/1/
+Description:
+Build APIs
+

@@ -32,8 +32,8 @@ def test_safe_scroll_last_card_should_return_false_after_retries() -> None:
 
 
 def test_go_to_next_results_page_should_return_true_when_page_changes(
-        monkeypatch: MonkeyPatch
-    ) -> None:
+    monkeypatch: MonkeyPatch,
+) -> None:
     navigator = build_navigator()
     next_button = FakeLocator(items=[FakeLocator()])
     pagination_state = FakeLocator(text="Page 1 of 3")

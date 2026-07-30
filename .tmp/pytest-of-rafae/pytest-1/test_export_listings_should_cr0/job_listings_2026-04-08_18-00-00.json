@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-07-30T00:20:00.321584-03:00",
+  "source_urls": [
+    "https://example.com/search/python"
+  ],
+  "total_listings": 1,
+  "listings": [
+    {
+      "listing_id": "job-1",
+      "source_url": "https://example.com/search/python",
+      "title": "Python Developer",
+      "link": "https://example.com/jobs/1/",
+      "description": "Build APIs"
+    }
+  ]
+}

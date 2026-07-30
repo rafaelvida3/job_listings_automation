@@ -106,7 +106,7 @@ class BrokenScrollCard(FakeCard):
 class FakeMouse:
     def wheel(self, delta_x: float, delta_y: float) -> None:
         return None
-    
+
 
 class FakePage:
     def __init__(
