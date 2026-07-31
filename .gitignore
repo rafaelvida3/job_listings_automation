@@ -9,3 +9,5 @@ browser_profile/
 config/searches.json
 *.egg-info/
 .tmp/
+*.old
+*.bkp
