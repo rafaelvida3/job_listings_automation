@@ -24,7 +24,8 @@ DEFAULT_SELECTOR_PROFILE = SelectorProfile(
     ),
     detail_description="#job-details",
     detail_published_at=(
-        "div.job-details-jobs-unified-top-card__tertiary-description-container strong > span"
+        "div.job-details-jobs-unified-top-card__tertiary-description-container "
+        "strong > span:last-child"
     ),
     pagination_state=".jobs-search-pagination__page-state",
     next_page_button=(

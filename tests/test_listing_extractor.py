@@ -54,10 +54,13 @@ def test_extract_listing_data_should_use_fallback_title_and_link_when_detail_dat
     )
     detail_title = FakeLocator(text="")
     detail_description = FakeLocator(text="Desenvolver APIs e manter automações")
+    detail_published_at = FakeLocator(text="há 2 horas")
+
     page = FakePage(
         locator_map={
             DEFAULT_SELECTOR_PROFILE.detail_title: detail_title,
             DEFAULT_SELECTOR_PROFILE.detail_description: detail_description,
+            DEFAULT_SELECTOR_PROFILE.detail_published_at: detail_published_at,
         }
     )
 
@@ -83,10 +86,13 @@ def test_extract_listing_data_should_return_text_before_language_filtering(
 ) -> None:
     detail_title = FakeLocator(text="Senior Python Developer")
     detail_description = FakeLocator(text="Build APIs and maintain automation workflows")
+    detail_published_at = FakeLocator(text="Compartilhada há 3 horas")
+
     page = FakePage(
         locator_map={
             DEFAULT_SELECTOR_PROFILE.detail_title: detail_title,
             DEFAULT_SELECTOR_PROFILE.detail_description: detail_description,
+            DEFAULT_SELECTOR_PROFILE.detail_published_at: detail_published_at,
         }
     )
 

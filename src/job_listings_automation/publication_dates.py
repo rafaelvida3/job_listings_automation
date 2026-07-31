@@ -5,7 +5,7 @@ import unicodedata
 from datetime import datetime, timedelta
 
 RELATIVE_PUBLICATION_PATTERN = re.compile(
-    r"(?:anunciada\s+)?ha\s+(?P<amount>\d+)\s+"
+    r"\bha\s+(?P<amount>\d+)\s+"
     r"(?P<unit>minuto|minutos|hora|horas|dia|dias|semana|semanas|mes|meses)\b",
     re.IGNORECASE,
 )
@@ -21,6 +21,7 @@ def normalize_relative_publication_text(value: str) -> str:
 
 def find_relative_publication_text(value: str) -> str | None:
     normalized = normalize_relative_publication_text(value)
+
     match = RELATIVE_PUBLICATION_PATTERN.search(normalized)
     if match is None:
         return None
@@ -37,6 +38,7 @@ def parse_relative_publication_datetime(
 
     normalized = normalize_relative_publication_text(relative_text)
     match = RELATIVE_PUBLICATION_PATTERN.search(normalized)
+
     if match is None:
         return None
 

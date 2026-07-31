@@ -73,13 +73,14 @@ class ListingExtractor:
             card.get_attribute("data-occludable-job-id") or card.get_attribute("data-job-id") or ""
         )
 
-    def get_publication_relative_text(self, card: Any) -> str | None:
-        try:
-            card_text = card.inner_text(timeout=5_000)
-        except RECOVERABLE_EXTRACTION_EXCEPTIONS:
+    def get_detail_publication_relative_text(self, page: Page) -> str | None:
+        publication_locator = page.locator(self.selectors.detail_published_at)
+        publication_text = self.get_locator_text(publication_locator)
+
+        if not publication_text:
             return None
 
-        return find_relative_publication_text(card_text)
+        return find_relative_publication_text(publication_text)
 
     def simulate_description_scroll(self, page: Page) -> None:
         try:
@@ -153,11 +154,6 @@ class ListingExtractor:
         effective_collected_at = collected_at or get_now()
         listing_id = self.get_listing_id(card)
         fallback_title, fallback_link = self.get_fallback_listing_data(card, base_origin)
-        published_relative_text = self.get_publication_relative_text(card)
-        published_at = parse_relative_publication_datetime(
-            published_relative_text,
-            effective_collected_at,
-        )
 
         self.click_listing_card(card, listing_id)
         page.wait_for_timeout(1_200)
@@ -179,6 +175,13 @@ class ListingExtractor:
 
         detail_title_locator = page.locator(self.selectors.detail_title)
         detail_description_locator = page.locator(self.selectors.detail_description)
+
+        published_relative_text = self.get_detail_publication_relative_text(page)
+
+        published_at = parse_relative_publication_datetime(
+            published_relative_text,
+            effective_collected_at,
+        )
 
         title = self.get_locator_text(detail_title_locator) or fallback_title
         description_text = self.get_locator_text(detail_description_locator, multiline=True)
